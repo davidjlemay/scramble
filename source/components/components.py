@@ -1,12 +1,13 @@
 from source.constructors.constructors import DictionaryConstructor, TilesConstructor
+from source import parameters
 
 
 class User:
     def __init__(self, name: str, username: str, password: str):
-        self.name = ''
+        self.name = name
         self._id = ''
-        self.username = ''
-        self.password = ''
+        self.username = username
+        self.password = password
         self.stats = Stats()
 
     def get_name(self) -> str:
@@ -41,8 +42,8 @@ class User:
 
 
 class Stats:
-    def __init__(self, user: object):
-        self._id = user.get_id()
+    def __init__(self, user_id: str):
+        self._id = user_id
         self.games_played = 0
         self.wins = 0
         self.elo = 0
@@ -60,16 +61,17 @@ class Stats:
     def update(self, game: object):
         self.history.append(game)
         self.games_played += 1
-        if game.get_winner() == self.player:
+        if game.winner == self._id:
             self.wins += 1
         self.elo = self.wins/self.games_played
 
 
 class Player:
-    def __init__(self, user: object):
-        self._id = user.get_id()
+    def __init__(self, user_id: str):
+        self._id = user_id
         self.tiles = []
         self.score = 0
+        self.moves = []
 
     def get_score(self):
         return self.score
@@ -90,12 +92,13 @@ class Player:
 
 
 class Game:
-    def __init__(self, players: list, board_size: int, language: str):
-        self.players = []
-        self.board = Board(board_size)
-        self.dictionary = Dictionary(language)
-        self.tiles = Tiles(language)
+    def __init__(self, players: list):
+        self.players = players
+        self.board = Board()
+        self.dictionary = Dictionary()
+        self.tiles = Tiles()
         self.complete = False
+        self.winner = ''
 
     def verify_word(self, word: str):
         if word in self.dictionary:
@@ -106,22 +109,32 @@ class Game:
     def get_winner(self):
         if self.complete:
             return max(self.players, key=lambda player: player.score)
+        else:
+            return 'Game not over.'
+
+    def take_tiles(self, number_of_tiles: int):
+        tiles = []
+        for tile in range(number_of_tiles):
+            tiles.append(self.tiles.pop())
+        return tiles
 
 
 class Board:
-    def __init__(self, board_size: int):
-        self.size = board_size
-        self.grid = Grid(board_size)
+    def __init__(self):
+        self.size = parameters.BOARD_SIZE
+        self.grid = Grid()
 
 
 class Grid:
-    def __init__(self, board_size: int):
-        self.grid = [[Square()] * board_size for _ in range(board_size)]
+    def __init__(self):
+        self.grid = [[Square()] * parameters.BOARD_SIZE for _ in range(parameters.BOARD_SIZE)]
 
 
 class Square:
     def __init__(self):
         self.value = 1
+        self.played = False
+        self.tile = None
 
     def get_value(self):
         return self.value
@@ -129,10 +142,17 @@ class Square:
     def set_value(self, value):
         self.value = value
 
+    def get_tile(self):
+        return self.tile
+
+    def set_tile(self, tile: object):
+        self.tile = tile
+        self.played = True
+
 
 class Tiles:
-    def __init__(self, language: str):
-        self.set = TilesConstructor.frequency(language)
+    def __init__(self):
+        self.set = TilesConstructor()
 
 
 class Tile:
@@ -148,9 +168,9 @@ class Tile:
 
 
 class Dictionary:
-    def __init__(self, language: str):
-        self.language = language
-        self.dictionary = DictionaryConstructor.from_resources(language)
+    def __init__(self):
+        self.language = parameters.LANGUAGE
+        self.dictionary = DictionaryConstructor()
 
 
 
