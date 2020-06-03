@@ -101,7 +101,7 @@ class Game:
         self.winner = ''
 
     def verify_word(self, word: str):
-        if word in self.dictionary:
+        if word in self.dictionary.keys():
             return True
         else:
             return False
@@ -122,11 +122,6 @@ class Game:
 class Board:
     def __init__(self):
         self.size = parameters.BOARD_SIZE
-        self.grid = Grid()
-
-
-class Grid:
-    def __init__(self):
         self.grid = [[Square()] * parameters.BOARD_SIZE for _ in range(parameters.BOARD_SIZE)]
 
 
@@ -156,7 +151,7 @@ class Tiles:
 
 
 class Tile:
-    def __init__(self, letter: str, value: int):
+    def __init__(self, letter: object, value: int):
         self.letter = letter
         self.value = value
 
@@ -171,7 +166,6 @@ class Dictionary:
     def __init__(self):
         self.language = parameters.LANGUAGE
         self.dictionary = DictionaryConstructor()
-
 
 
 

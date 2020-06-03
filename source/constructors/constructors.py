@@ -17,7 +17,7 @@ class DictionaryConstructor:
 
     @staticmethod
     def ordered_list():
-        return sorted(list(open(parameters.LANGUAGE_ROOT_PATH+parameters.LANGUAGE+'-words-collins-2019.txt')))
+        return sorted([line for line in open(parameters.LANGUAGE_ROOT_PATH+parameters.LANGUAGE+'-words-collins-2019.txt')])
 
     @staticmethod
     def trie():
@@ -37,5 +37,10 @@ class TilesConstructor:
             frequency = [list(line) for line in csv.reader(f)]
             distribution = [[x[0]] * int(x[1]) for x in frequency]
             flat_list = [item for sublist in distribution for item in sublist]
-            return random.sample(flat_list, k=len(flat_list))
+            flat_tuples_list = []
+            for x in flat_list:
+                for y in frequency:
+                    if x == y:
+                        flat_tuples_list.append({'name': x, 'value': y[2]})
+            return random.sample(flat_tuples_list, k=len(flat_tuples_list))
 
