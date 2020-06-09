@@ -5,7 +5,7 @@ import numpy as np
 
 
 player_ids = [1, 2, 3, 4]
-players = [Player() for x in player_ids]
+players = [Player(x) for x in player_ids]
 game = Game(players)
 
 
@@ -63,7 +63,7 @@ def make_board(grid: np.array):
     return board
 
 
-def regex_compile(row: np.series):
+def regex_compile(row: list):
     pattern = r''
     for square in row:
         if not game.board.grid[row][square].square.played:
