@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
   <link rel="stylesheet" href="/resources/demos/style.css">
   <style>
-  .tile { width: 36px; height: 36px; padding: 0; float: left; margin: 2px; background: #f9e79f; overflow: hidden; }
+  .tile .played { width: 36px; height: 36px; padding: 0; float: left; margin: 2px; background: #f9e79f; overflow: hidden; }
   .board { display: block; width: 600px; height: 600px; padding: 0; float: left; margin: 0px; background: #c0392b; }
   .square { display: inline-block; width: 36px; height: 36px; padding: 0; float: left; margin: 2px; background: #76d7c4; }
   .tray ( display: block; width: 660px; height: 40px; float: left; }
@@ -15,11 +15,48 @@
   <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
   <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
   <script>
+  {% for player in players %}
+  var player_{{ players.index(player) }}_score = 0
+  {% endfor %}
+  var move = []
+
+  play_word: function() {
+    $.ajax({
+      url: 'http://127.0.0.1:5000/',
+      method: 'POST',
+      type: 'json',
+      data: move
+    } )
+      .done(function( data ) {
+        for (let i = 0; i < data.length; i++) {
+          document.getElementById(data[i].square)
+          .className = "played"
+          .html(data[i].tile)
+        }
+      ) }
+      .fail(function() {
+        alert("Something went wrong.")
+      ) }
+  }
   $( function() {
     $( ".tile" ).draggable({
       grid: [40, 40]
+      activate: function( event, ui ){
+        var square = ui.droppable.attr("id")
+        for (let i = 0; i < move.length; i++) {
+          if (move[i].square == square) {
+            move.splice(move.indexOf(square), 1)
+          }
+        }
+      }
     });
-    $( ".square" ).droppable();
+    $( ".square" ).droppable({
+       drop: function( event, ui ){
+        var tile = ui.draggable.attr("id")
+        var square = $( this ).attr("id")
+        move.push(var dict = { "tile": tile, "square": square })
+        }
+    });
   } );
   </script>
 </head>

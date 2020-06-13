@@ -9,11 +9,14 @@ players = [Player(x) for x in player_ids]
 game = Game(players)
 
 
-def play_word(tiles_squares: dict):
+def play_word(tiles_squares: list):
     points = 0
-    for tile, square in tiles_squares:
-        if not game.board.grid.square.played:
-            game.board.grid[square.row][square.col].square.set_value(tile)
+    for x in tiles_squares:
+        tile = x.tile
+        row, col = x.square.split()
+        square = game.board.grid[row][col].square
+        if not square.played:
+            square.set_value(tile)
             points += tile.value*square.value
             return points
         else:

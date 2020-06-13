@@ -2,10 +2,12 @@ import redis
 import os
 from flask import Flask, request, render_template, session
 from flask_session import Session
+from flask_cors import CORS
 from source import main
 
 
 app = Flask(__name__)
+CORS(app)
 app.config['DEBUG'] = True
 
 #SESSION_TYPE = 'redis'
