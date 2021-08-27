@@ -5,12 +5,8 @@ from source.parameters import *
 
 
 class DictionaryConstructor:
-    def __init__(self):
-        self.type = DICTIONARY_TYPE
-        self.dictionary = self.dictionary_factory()
-
     def dictionary_factory(self):
-        if self.type == 'list':
+        if DICTIONARY_TYPE == 'list':
             return self.ordered_list()
         else:
             return self.trie()
@@ -28,19 +24,27 @@ class DictionaryConstructor:
 
 
 class TilesConstructor:
-    def __init__(self):
-        pass
+    def tiles_factory(self):
+        return self.frequency()
 
     @staticmethod
     def frequency():
         with open(LANGUAGE_ROOT_PATH+LANGUAGE+'-tile-distribution.csv') as f:
             frequency = [list(line) for line in csv.reader(f)]
-            distribution = [[x[0]] * int(x[1]) for x in frequency]
-            flat_list = [item for sublist in distribution for item in sublist]
-            flat_tuples_list = []
-            for x in flat_list:
-                for y in frequency:
-                    if x == y:
-                        flat_tuples_list.append({'name': x, 'value': y[2]})
-            return random.sample(flat_tuples_list, k=len(flat_tuples_list))
+            tiles = []
+            for x in frequency:
+                for y in range(int(x[1])):
+                    tiles.append(Tile(str(x[0]), int(x[2])))
+            return random.sample(tiles, k=len(tiles))
 
+
+class Tile:
+    def __init__(self, letter: str, value: int):
+        self.letter = letter
+        self.value = value
+
+    def get_letter(self):
+        return self.letter
+
+    def get_value(self):
+        return self.value

@@ -1,17 +1,21 @@
+from random import randrange
+
 from source.constructors import DictionaryConstructor, TilesConstructor
 from source.parameters import *
 
-from itertools import permutations
+from itertools import combinations
 import re
 import numpy as np
+
 
 class User:
     def __init__(self, name: str, username: str, password: str):
         self.name = name
-        self._id = ''
+        self._id = create_id()
         self.username = username
         self.password = password
-#        self.stats = Stats()
+
+    #        self.stats = Stats()
 
     def get_name(self) -> str:
         return self.name
@@ -61,21 +65,22 @@ class Stats:
     def get_history(self) -> object:
         return self.history
 
-    def update(self, Game: object):
-        self.history.append(Game)
+    def update(self, game: object):
+        self.history.append(game)
         self.games_played += 1
         if Game.winner == self._id:
             self.wins += 1
-        self.elo = self.wins/self.games_played
+        self.elo = self.wins / self.games_played
 
 
 class Player:
     def __init__(self, user: object):
-        self._id = user.get_id()
-        self.name = user.get_name()
-        self.tiles = []
+        self.username = user.username
+        self.rack = []
         self.score = 0
         self.moves = []
+        self.words = []
+        self.matches = []
 
     def get_score(self):
         return self.score
@@ -83,29 +88,26 @@ class Player:
     def set_score(self, points):
         self.score += points
 
-    def get_tiles(self):
-        return self.tiles
+    def get_rack(self):
+        return self.rack
 
     def add_tiles(self, tiles: list):
         for tile in tiles:
-            self.tiles.append(tile)
+            self.rack.append(tile)
 
-    def remove_tiles(self, tile: object):
-        self.tiles.remove(tile)
+    def remove_tile(self, tile: object):
+        self.rack.remove(tile)
 
-    def remove_tiles(self, tiles: list):
-        for tile in tiles:
-            self.tiles.remove(tile)
-
+    def remove_tiles(self, rack: list):
+        for tile in rack:
+            self.rack.remove(tile)
 
     def place_tile(self, i, j: int, placed_tile: object, game: object):
-            try:
-                game.add_tile(placed_tile)
-            except:
-                pass
-            self.remove_tile(placed_tile)
-
-
+        try:
+            game.add_tile(placed_tile)
+        except:
+            pass
+        self.remove_tile(placed_tile)
 
     def play_word(tiles_squares: list):
         points = 0
@@ -115,33 +117,31 @@ class Player:
             square = Game.board.grid[row][col].square
             if not square.played:
                 square.set_value(tile)
-                points += tile.value*square.value
+                points += tile.value * square.value
                 return points
             else:
                 return 'Invalid move.'
 
-
-class Computer(Player):
-    def __init__(self):
-        self.words = []
-        self.matches = []
-
-    def find_words(self):
-        perms = permutations(self.tiles)
+    def find_words(self, game: object):
+        letters = [tile.letter for tile in self.rack]
+        combs = [combinations(letters, n) for n in range(len(letters))]
+        flat_combs = [item for sublist in combs for item in sublist]
         words = []
-        for perm in perms:
-            if Game.dictionary.has_subtrie(perm):
-                words.append(''.join(perm))
-        self.words = perms
+        for comb in flat_combs:
+            word = ''.join(comb)
+            if game.dictionary.dictionary.has_subtrie(word):
+                words.append(word)
+        self.words = words
 
     def scan_board(self):
         matches = []
         board = make_board(np.array(Game.board.grid))
         for pattern in board:
-            for word in words:
+            for word in self.words:
                 match = re.search(regex_compile(pattern), word)
                 if match is not None:
-                    matches.append({'match': regex_to_tiles(match.group(0)), 'pattern': pattern, 'x': board.index(pattern)})
+                    matches.append(
+                        {'match': regex_to_tiles(match.group(0)), 'pattern': pattern, 'x': board.index(pattern)})
         self.matches = matches
 
 
@@ -166,10 +166,10 @@ class Game:
         return None
 
     def take_tiles(self, number_of_tiles: int):
-        tiles = []
-        for tile in range(number_of_tiles):
-            tiles.append(self.tiles.pop())
-        return tiles
+        items = []
+        for i in range(number_of_tiles):
+            items.append(self.tiles.pop())
+        return items
 
     def add_tile(self, i, j, placed_tile: object):
         if not self.board.grid[i][j].tile.letter:
@@ -178,6 +178,7 @@ class Game:
     def remove_tile(self, i, j, placed_tile: object):
         if self.board.grid[i][j].tile.letter is placed_tile:
             self.board.grid[i][j].tile = ''
+
 
 class Board:
     def __init__(self):
@@ -207,27 +208,16 @@ class Square:
 
 class Tiles:
     def __init__(self):
-        self.set = TilesConstructor()
+        self.set = TilesConstructor().tiles_factory()
 
-
-class Tile:
-    def __init__(self, letter: str, value: int):
-        self.letter = letter
-        self.value = value
-
-    def get_letter(self):
-        return self.letter
-
-    def get_value(self):
-        return self.value
+    def pop(self):
+        return self.set.pop()
 
 
 class Dictionary:
     def __init__(self):
         self.language = LANGUAGE
-        self.dictionary = DictionaryConstructor()
-
-
+        self.dictionary = DictionaryConstructor().dictionary_factory()
 
 
 def regex_to_tiles(matches: list):
@@ -243,6 +233,7 @@ def regex_to_tiles(matches: list):
         match_tiles_list.append({'match_tiles': match_tiles, 'pattern': pattern_tiles})
     return match_tiles_list
 
+
 def make_board(grid: np.array):
     board = []
     for row in grid[0, :]:
@@ -250,6 +241,7 @@ def make_board(grid: np.array):
     for col in grid[:, 0]:
         board.append(re.compile(regex_compile(col.T)))
     return board
+
 
 def regex_compile(row: list):
     pattern = r''
@@ -259,6 +251,7 @@ def regex_compile(row: list):
         else:
             pattern += Game.board.grid.square.tile.letter
     return pattern
+
 
 def match_scores(matches: list):
     scores = []
@@ -272,3 +265,6 @@ def match_scores(matches: list):
         scores.append({'match': match, 'score': score})
     return scores
 
+
+def create_id():
+    return str(randrange(100))
