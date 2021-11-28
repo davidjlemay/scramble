@@ -1,4 +1,5 @@
 from random import randrange
+from typing import NamedTuple
 
 from source.constructors import DictionaryConstructor, TilesConstructor
 from source.parameters import *
@@ -91,6 +92,9 @@ class Player:
     def get_rack(self):
         return self.rack
 
+    def add_tile(self, tile: object):
+        self.rack.append(tile)
+
     def add_tiles(self, tiles: list):
         for tile in tiles:
             self.rack.append(tile)
@@ -103,24 +107,21 @@ class Player:
             self.rack.remove(tile)
 
     def place_tile(self, i, j: int, placed_tile: object, game: object):
-        try:
-            game.add_tile(placed_tile)
-        except:
-            pass
+        game.add_tile(i, j, placed_tile)
         self.remove_tile(placed_tile)
 
-    def play_word(tiles_squares: list):
-        points = 0
-        for x in tiles_squares:
-            tile = x.tile
-            row, col = x.square.split()
-            square = Game.board.grid[row][col].square
-            if not square.played:
-                square.set_value(tile)
-                points += tile.value * square.value
-                return points
-            else:
-                return 'Invalid move.'
+    def return_tile(self, i, j: int, game: object):
+        self.add_tile(game.board.grid[i][j].tile)
+        game.remove_tile(i, j)
+
+    def play_word(self, game: object):
+        legit, tiles_squares = game.verify_play()
+        if not legit:
+            for x, y in tiles_squares:
+                self.return_tile(x, y, game)
+        else:
+            self.set_score(game.calculate_points(tiles_squares))
+            self.add_tiles(game.take_tiles(len(tiles_squares)))
 
     def find_words(self, game: object):
         letters = [tile.letter for tile in self.rack]
@@ -155,10 +156,7 @@ class Game:
         self.winner = ''
 
     def verify_word(self, word: str):
-        if word in self.dictionary.keys():
-            return True
-        else:
-            return False
+        return self.dictionary.dictionary.has_node(word)
 
     def get_winner(self):
         if self.complete:
@@ -171,19 +169,62 @@ class Game:
             items.append(self.tiles.pop())
         return items
 
-    def add_tile(self, i, j, placed_tile: object):
-        if not self.board.grid[i][j].tile.letter:
+    def add_tile(self, i, j: int, placed_tile: object):
+        if self.board.grid[i][j].played is False:
             self.board.grid[i][j].tile = placed_tile
+        else:
+            self.remove_tile(i, j)
 
-    def remove_tile(self, i, j, placed_tile: object):
-        if self.board.grid[i][j].tile.letter is placed_tile:
-            self.board.grid[i][j].tile = ''
+    def remove_tile(self, i, j: int):
+        if self.board.grid[i][j].played is False:
+            self.board.grid[i][j].tile = None
+
+    def verify_play(self):
+        tiles_squares = []
+        for x in self.board.grid:
+            row = self.board.grid.index(x)
+            for y in self.board.grid[row]:
+                col = self.board.grid[row].index(y)
+                if y.tile is not None and y.played is False:
+                    tiles_squares.append((row, col))
+        if len(tiles_squares) == 0:
+            return False, tiles_squares
+        rows, columns = zip(*tiles_squares)
+        if len(set(rows)) == 1 or len(set(columns)) == 1:
+            if self.consecutive(rows) is True or self.consecutive(columns) is True:
+                word = ''
+                for x, y in tiles_squares:
+                    word += self.board.grid[x][y].tile.letter
+                if self.verify_word(word):
+                    self.set_tiles(tiles_squares)
+                    return True, tiles_squares
+                else:
+                    return False, tiles_squares
+
+    def calculate_points(self, tiles_squares: list):
+        points = 0
+        for x, y in tiles_squares:
+            tile = self.board.grid[x][y].tile.value
+            square = self.board.grid[x][y].value
+            points += tile * square
+        return points
+
+    @staticmethod
+    def consecutive(x):
+        if sorted(x) == list(range(min(x), max(x) + 1)):
+            return True
+        else:
+            return False
+
+    def set_tiles(self, tiles_squares: list):
+        for x, y in tiles_squares:
+            self.board.grid[x][y].played = True
 
 
 class Board:
     def __init__(self):
         self.size = BOARD_SIZE
-        self.grid = [[Square()] * BOARD_SIZE for _ in range(BOARD_SIZE)]
+        self.grid = [[Square() for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
 
 
 class Square:
@@ -192,19 +233,6 @@ class Square:
         self.played = False
         self.tile = None
 
-    def get_value(self):
-        return self.value
-
-    def set_value(self, value):
-        self.value = value
-
-    def get_tile(self):
-        return self.tile
-
-    def set_tile(self, tile: object):
-        self.tile = tile
-        self.played = True
-
 
 class Tiles:
     def __init__(self):
@@ -212,6 +240,11 @@ class Tiles:
 
     def pop(self):
         return self.set.pop()
+
+
+class Tile(NamedTuple):
+    letter: str
+    value: int
 
 
 class Dictionary:
